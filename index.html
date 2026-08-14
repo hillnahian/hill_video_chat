@@ -8,31 +8,32 @@
 <title>AI Conversation</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   /* ============================================================
      THEME  —  colours & type pulled from the mockup
      ============================================================ */
   :root{
-    --bg-deep:      #0b1020;
-    --panel:        rgba(18, 24, 48, 0.72);
-    --panel-edge:   rgba(120, 140, 220, 0.18);
-    --bubble-aira:  rgba(30, 38, 66, 0.66);
-    --bubble-you:   rgba(24, 44, 74, 0.70);
-    --name-aira:    #a78bfa;
-    --name-you:     #38e0ff;
-    --text:         #eef1fb;
-    --text-dim:     #9aa3c4;
-    --grad-a:       #7c5cff;
-    --grad-b:       #21a9ff;
-    --online:       #33d17a;
+    --bg-deep:      #17110c;                 /* warm near-black so orange pops */
+    --panel:        rgba(30, 22, 16, 0.74);
+    --panel-edge:   rgba(243, 107, 22, 0.22);
+    --bubble-aira:  rgba(60, 38, 20, 0.60);  /* warm, brand-leaning */
+    --bubble-you:   rgba(46, 38, 30, 0.66);  /* neutral warm */
+    --name-aira:    #F97316;                 /* Banglalink orange */
+    --name-you:     #FBB04C;                 /* lighter amber for the user */
+    --text:         #fdf4ea;                 /* warm white */
+    --text-dim:     #c6b0a0;                 /* warm grey */
+    --grad-a:       #F36B16;                 /* brand bright orange */
+    --grad-b:       #FBA919;                 /* brand amber/yellow */
+    --brand:        #F36B16;
+    --online:       #34d17a;                 /* success green (kept for the ✓) */
   }
 
   *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
   html,body{ height:100%; }
   body{
     background:#000;
-    font-family:"Noto Sans Bengali",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-family:"Poppins","Noto Sans Bengali",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     color:var(--text);
     display:flex; align-items:center; justify-content:center;
     overflow:hidden;
@@ -62,14 +63,14 @@
   /* fallback gradient if no video file is present yet */
   .poster{
     background:
-      radial-gradient(120% 80% at 50% 20%, #3a2f5a 0%, #1a1730 55%, #0b1020 100%);
+      radial-gradient(120% 80% at 50% 20%, #5c3a12 0%, #2a1c10 55%, #17110c 100%);
     display:flex; align-items:center; justify-content:center;
   }
   .poster span{ color:rgba(255,255,255,.28); font-size:15px; letter-spacing:.02em; }
   /* darken the bottom so the panel reads clearly */
   .scrim{
     position:absolute; inset:0;
-    background:linear-gradient(to bottom, transparent 40%, rgba(8,10,22,.55) 78%, rgba(8,10,22,.92) 100%);
+    background:linear-gradient(to bottom, transparent 40%, rgba(20,14,8,.55) 78%, rgba(20,14,8,.94) 100%);
     pointer-events:none;
   }
   /* catches taps so they can't hit the video's native play/pause gesture */
@@ -100,11 +101,21 @@
   .icon-btn{ width:34px; height:34px; display:flex; align-items:center; justify-content:center;
              color:#fff; opacity:.9; }
 
+  /* Banglalink wordmark */
+  .brand{ display:flex; align-items:center; gap:8px;
+          padding:5px 14px 5px 10px; border-radius:20px;
+          background:rgba(0,0,0,.26);
+          -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
+  .brand .mark{ width:17px; height:17px; border-radius:6px;
+                background:linear-gradient(135deg,var(--grad-a),var(--grad-b));
+                box-shadow:0 2px 6px rgba(243,107,22,.5); }
+  .brand .wm{ font-weight:600; font-size:16px; letter-spacing:-.01em; color:#fff; }
+
   /* tap-for-sound button — sits above the tap-catch layer so it's tappable */
   .sound-hint{ position:absolute; top:114px; left:50%; transform:translateX(-50%);
                z-index:21; display:flex; align-items:center; gap:7px;
-               background:rgba(10,14,30,.72); color:#fff;
-               border:1px solid rgba(255,255,255,.16); border-radius:22px;
+               background:rgba(30,20,12,.74); color:#fff;
+               border:1px solid rgba(243,107,22,.45); border-radius:22px;
                padding:10px 18px; font-size:14px; font-weight:500; cursor:pointer;
                -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
                box-shadow:0 6px 20px rgba(0,0,0,.35);
@@ -157,7 +168,7 @@
   .pfp{ flex:0 0 auto; width:44px; height:44px; border-radius:50%;
         display:flex; align-items:center; justify-content:center;
         font-weight:600; font-size:16px; overflow:hidden; }
-  .pfp.aira{ background:linear-gradient(135deg,#7c5cff,#c86bff); color:#fff; }
+  .pfp.aira{ background:linear-gradient(135deg,var(--grad-a),var(--grad-b)); color:#fff; }
   .pfp.you{ background:transparent; border:1.5px solid var(--name-you); color:var(--name-you); }
   .pfp img{ width:100%; height:100%; object-fit:cover; }
 
@@ -183,7 +194,7 @@
 
   /* on-screen action steps (e.g. checking / turning on DND) */
   .action{ align-self:center; display:flex; align-items:center; gap:9px;
-           background:rgba(20,26,48,.72); border:1px solid rgba(120,140,220,.20);
+           background:rgba(40,28,18,.74); border:1px solid rgba(243,107,22,.24);
            border-radius:14px; padding:9px 15px; max-width:90%;
            font-size:14.5px; color:var(--text-dim);
            opacity:0; animation:pop .3s ease forwards; }
@@ -197,14 +208,14 @@
                   color:var(--online); font-weight:700; font-size:13px; }
 
   /* ---------- mode toggle ---------- */
-  .modes{ display:flex; gap:6px; background:rgba(10,14,30,.55);
+  .modes{ display:flex; gap:6px; background:rgba(20,14,8,.55);
           border:1px solid rgba(255,255,255,.06); border-radius:18px; padding:6px; }
   .mode{ flex:1; display:flex; flex-direction:column; align-items:center; gap:5px;
          padding:11px 0; border-radius:13px; color:var(--text-dim); font-size:14px; font-weight:500;
          transition:.2s; }
   .mode svg{ width:22px; height:22px; }
   .mode.active{ background:linear-gradient(135deg,var(--grad-a),var(--grad-b)); color:#fff;
-                box-shadow:0 6px 18px rgba(90,80,255,.35); }
+                box-shadow:0 6px 18px rgba(243,107,22,.42); }
   .mode.divider{ position:relative; }
 </style>
 </head>
@@ -235,6 +246,7 @@
   <!-- header -->
   <div class="header">
     <div class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></div>
+    <div class="brand"><span class="mark"></span><span class="wm">banglalink</span></div>
     <div class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></div>
   </div>
 
