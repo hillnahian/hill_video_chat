@@ -213,7 +213,8 @@
 
   <!-- avatar video -->
   <div class="avatar-wrap">
-    <video id="avatar" loop playsinline></video>
+    <video id="avatar" loop playsinline muted></video>
+    <audio id="avatarAudio" loop></audio>
     <div class="poster" id="poster"><span>Drop your avatar video here → set CONFIG.avatarVideo</span></div>
     <div class="scrim"></div>
   </div>
@@ -413,11 +414,13 @@ async function runConversation(){
 runConversation();
 
 // Audio + tap handling.
-// Starts muted so it plays on load; one tap (on the button OR anywhere) turns
-// sound on. play() is re-called inside the gesture so iOS honors it on the FIRST
-// tap. The tap-catch layer also stops taps from reaching the video's pause gesture.
+// The video stays MUTED forever — on iOS, unmuting a playing inline video makes
+// it pause, and it won't resume without another gesture (that was the bug). So we
+// play the sound from a SEPARATE audio element instead, kept in sync with the video.
+// One tap starts it; the video never pauses because it's never touched.
 (function(){
   const video   = document.getElementById('avatar');
+  const audio   = document.getElementById('avatarAudio');
   const catcher = document.getElementById('tapCatch');
   const hint    = document.getElementById('soundHint');
   if(!CONFIG.avatarVideo) return;
@@ -425,24 +428,39 @@ runConversation();
   video.muted = true;
   video.play().catch(()=>{});
 
-  let on = false;
+  audio.src = CONFIG.avatarVideo;   // same file — the audio element plays its sound track
+  audio.volume = 1;
+
+  let soundOn = false;
   function enableSound(e){
     if(e && e.cancelable) e.preventDefault();
-    video.muted = false;
-    video.volume = 1;
-    video.play().catch(()=>{});     // re-affirm within the gesture — fixes the double-tap
-    if(hint) hint.classList.add('hidden');
-    on = true;
+    if(soundOn) return;
+    try{ audio.currentTime = video.currentTime || 0; }catch(_){}
+    audio.play().then(()=>{
+      soundOn = true;
+      if(hint) hint.classList.add('hidden');
+    }).catch(()=>{});
   }
 
-  // button and full-screen catcher both trigger it, on the first tap
   ['click','touchstart'].forEach(ev=>{
     if(hint)    hint.addEventListener(ev, enableSound, { passive:false });
     if(catcher) catcher.addEventListener(ev, enableSound, { passive:false });
   });
 
-  // looping demo: if it ever pauses (e.g. app backgrounded), resume
-  video.addEventListener('pause', ()=>{ if(!document.hidden) video.play().catch(()=>{}); });
+  // keep the audio lined up with the looping video
+  setInterval(()=>{
+    if(soundOn && Math.abs((audio.currentTime||0) - (video.currentTime||0)) > 0.3){
+      try{ audio.currentTime = video.currentTime || 0; }catch(_){}
+    }
+  }, 2000);
+
+  // resume both if the app was backgrounded
+  document.addEventListener('visibilitychange', ()=>{
+    if(!document.hidden){
+      video.play().catch(()=>{});
+      if(soundOn) audio.play().catch(()=>{});
+    }
+  });
 })();
 </script>
 </body>
