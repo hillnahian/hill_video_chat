@@ -100,6 +100,19 @@
   .icon-btn{ width:34px; height:34px; display:flex; align-items:center; justify-content:center;
              color:#fff; opacity:.9; }
 
+  /* tap-for-sound button — sits above the tap-catch layer so it's tappable */
+  .sound-hint{ position:absolute; top:114px; left:50%; transform:translateX(-50%);
+               z-index:21; display:flex; align-items:center; gap:7px;
+               background:rgba(10,14,30,.72); color:#fff;
+               border:1px solid rgba(255,255,255,.16); border-radius:22px;
+               padding:10px 18px; font-size:14px; font-weight:500; cursor:pointer;
+               -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
+               box-shadow:0 6px 20px rgba(0,0,0,.35);
+               animation:pulseHint 1.6s ease-in-out infinite; }
+  .sound-hint.hidden{ display:none; }
+  @keyframes pulseHint{ 0%,100%{ opacity:.82; transform:translateX(-50%) scale(1) }
+                        50%{ opacity:1; transform:translateX(-50%) scale(1.04) } }
+
   /* ---------- transcript panel ---------- */
   .panel{
     position:absolute; left:0; right:0; bottom:0; z-index:6;
@@ -223,6 +236,12 @@
     <div class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></div>
     <div class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></div>
   </div>
+
+  <!-- tap to enable audio -->
+  <button id="soundHint" class="sound-hint">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="#fff"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M18 6a8 8 0 0 1 0 12" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+    Tap for sound
+  </button>
 
   <!-- transcript panel -->
   <div class="panel">
@@ -394,30 +413,35 @@ async function runConversation(){
 runConversation();
 
 // Audio + tap handling.
-// Phones won't autoplay sound, and tapping the video itself pauses it — so a
-// transparent layer catches taps: it unmutes and keeps the video playing, and
-// the taps never reach the video's own play/pause gesture.
+// Starts muted so it plays on load; one tap (on the button OR anywhere) turns
+// sound on. play() is re-called inside the gesture so iOS honors it on the FIRST
+// tap. The tap-catch layer also stops taps from reaching the video's pause gesture.
 (function(){
   const video   = document.getElementById('avatar');
   const catcher = document.getElementById('tapCatch');
+  const hint    = document.getElementById('soundHint');
   if(!CONFIG.avatarVideo) return;
 
-  // try to start with sound; if the browser blocks it, start muted (still playing)
-  video.muted = false;
-  video.volume = 1;
-  video.play().catch(()=>{ video.muted = true; video.play().catch(()=>{}); });
+  video.muted = true;
+  video.play().catch(()=>{});
 
-  // any tap: sound on, make sure it's playing — never pause
-  function tap(e){
+  let on = false;
+  function enableSound(e){
     if(e && e.cancelable) e.preventDefault();
     video.muted = false;
     video.volume = 1;
-    if(video.paused) video.play().catch(()=>{});
+    video.play().catch(()=>{});     // re-affirm within the gesture — fixes the double-tap
+    if(hint) hint.classList.add('hidden');
+    on = true;
   }
-  catcher.addEventListener('click', tap);
-  catcher.addEventListener('touchstart', tap, { passive:false });
 
-  // safety net for a looping demo: if something pauses it, resume
+  // button and full-screen catcher both trigger it, on the first tap
+  ['click','touchstart'].forEach(ev=>{
+    if(hint)    hint.addEventListener(ev, enableSound, { passive:false });
+    if(catcher) catcher.addEventListener(ev, enableSound, { passive:false });
+  });
+
+  // looping demo: if it ever pauses (e.g. app backgrounded), resume
   video.addEventListener('pause', ()=>{ if(!document.hidden) video.play().catch(()=>{}); });
 })();
 </script>
