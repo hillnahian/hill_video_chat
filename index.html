@@ -72,6 +72,8 @@
     background:linear-gradient(to bottom, transparent 40%, rgba(8,10,22,.55) 78%, rgba(8,10,22,.92) 100%);
     pointer-events:none;
   }
+  /* catches taps so they can't hit the video's native play/pause gesture */
+  .tap-catch{ position:absolute; inset:0; z-index:20; background:transparent; }
 
   /* ---------- status bar ---------- */
   .statusbar{
@@ -247,6 +249,9 @@
       </div>
     </div>
   </div>
+
+  <!-- catches taps so they unmute but can't pause the video -->
+  <div class="tap-catch" id="tapCatch"></div>
 </div>
 
 <script>
@@ -388,20 +393,32 @@ async function runConversation(){
 
 runConversation();
 
-// Start WITH sound. If the browser blocks unmuted autoplay, fall back to
-// muted playback and unmute silently on the first interaction (no button).
+// Audio + tap handling.
+// Phones won't autoplay sound, and tapping the video itself pauses it — so a
+// transparent layer catches taps: it unmutes and keeps the video playing, and
+// the taps never reach the video's own play/pause gesture.
 (function(){
-  const video = document.getElementById('avatar');
+  const video   = document.getElementById('avatar');
+  const catcher = document.getElementById('tapCatch');
   if(!CONFIG.avatarVideo) return;
+
+  // try to start with sound; if the browser blocks it, start muted (still playing)
   video.muted = false;
   video.volume = 1;
-  video.play().catch(()=>{
-    video.muted = true;
-    video.play().catch(()=>{});
-    const unmute = ()=>{ video.muted = false; video.volume = 1; video.play().catch(()=>{}); };
-    ['pointerdown','touchstart','keydown'].forEach(ev =>
-      document.addEventListener(ev, unmute, { once:true }));
-  });
+  video.play().catch(()=>{ video.muted = true; video.play().catch(()=>{}); });
+
+  // any tap: sound on, make sure it's playing — never pause
+  function tap(e){
+    if(e && e.cancelable) e.preventDefault();
+    video.muted = false;
+    video.volume = 1;
+    if(video.paused) video.play().catch(()=>{});
+  }
+  catcher.addEventListener('click', tap);
+  catcher.addEventListener('touchstart', tap, { passive:false });
+
+  // safety net for a looping demo: if something pauses it, resume
+  video.addEventListener('pause', ()=>{ if(!document.hidden) video.play().catch(()=>{}); });
 })();
 </script>
 </body>
